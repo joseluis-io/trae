@@ -2,27 +2,30 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"net/http"
+	"github.com/PuerkitoBio/goquery"
 )
 
 func main() {
 
-	baseURL := "https://dle.rae.es/"
+	word := "ambiguo"
+	baseURL := "https://dle.rae.es/" + word
 
 	client := &http.Client{}
 
 	client.Transport = getTLSConfiguration(client.Transport)
 
-	response, err := client.Get(baseURL)
+	res, err := client.Get(baseURL)
+	checkErr(err)
+	defer res.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
 	checkErr(err)
 
-	body, _ := ioutil.ReadAll(response.Body)
+	article := doc.Find("article").Text()
 
-	fmt.Println(string(body))
-
-	response.Body.Close()
+	fmt.Println(article)
 }
 
 func checkErr(err error){
