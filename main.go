@@ -1,61 +1,34 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"net/http"
-    "github.com/PuerkitoBio/goquery"
 )
-
-// This will get called for each HTML element found
-func processElement(index int, element *goquery.Selection) {
-    // See if the href attribute exists on the element
-    href, exists := element.Attr("href")
-    if exists {
-        fmt.Println(href)
-    }
-}
-
-// Custom user agent.
-const (
-    userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) " +
-        "AppleWebKit/537.36 (KHTML, like Gecko) " +
-        "Chrome/53.0.2785.143 " +
-        "Safari/537.36"
-)
-
-const url = "https://dle.rae.es/hola?m=form"
 
 func main() {
-	// HTTP Request
 
+	baseURL := "https://dle.rae.es/"
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		fmt.Errorf("failed to initiate request to rae: %v", err)
-	}
+	client.Transport = getTLSConfiguration(client.Transport)
 
-	// Set HTTP User-Agent to server think is a user
-	req.Header.Set("User-Agent", userAgent)
+	response, err := client.Get(baseURL)
+	checkErr(err)
 
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Errorf("failed to make request to rae: %v", err)
-	}
+	body, _ := ioutil.ReadAll(response.Body)
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Errorf("failed to read response body: %v", err)
-	}
+	fmt.Println(string(body))
 
-	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
-	if err != nil {
-		fmt.Errorf("failed to parse response from rae: %v", err)
-	}
-
-	doc.Find("a").Each(processElement)
+	response.Body.Close()
 }
+
+func checkErr(err error){
+	if err != nil{
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+

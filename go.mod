@@ -1,6 +1,8 @@
-module trae
+module joseluis.io/trae
 
 go 1.17
+
+require github.com/EDDYCJY/fake-useragent v0.2.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
