@@ -9,11 +9,12 @@ import (
 
 func main() {
 
-	word := "ambiguo"
+	word := os.Args[1]
 	baseURL := "https://dle.rae.es/" + word
 
-	client := &http.Client{}
+	// TODO: check if word exists in cache
 
+	client := &http.Client{}
 	client.Transport = getTLSConfiguration(client.Transport)
 
 	res, err := client.Get(baseURL)
@@ -24,8 +25,17 @@ func main() {
 	checkErr(err)
 
 	article := doc.Find("article").Text()
+	results := doc.Find("div.item-list").Text()
 
-	fmt.Println(article)
+	// TODO: persist word in cache
+
+	if article != "" {
+		fmt.Println(article)
+	}else{
+		fmt.Println(results)
+	}
+
+
 }
 
 func checkErr(err error){
