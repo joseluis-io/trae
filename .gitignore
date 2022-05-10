@@ -19,3 +19,9 @@ go.work
 ### Go Patch ###
 /vendor/
 /Godeps/
+
+# database file
+my.db
+
+# binary
+trae
