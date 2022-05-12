@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,7 +11,24 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+type Configuration struct {
+	Path  string
+	Delay uint32
+}
+
 func main() {
+
+	// Reading configuration file
+	file, _ := os.Open("config.json")
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	configuration := Configuration{}
+	err := decoder.Decode(&configuration)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	fmt.Println(configuration.Path)
+	fmt.Println(configuration.Delay)
 
 	// Open bolt database connection
 	db, err := bolt.Open("my.db", 0600, nil)
