@@ -1,37 +1,29 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/boltdb/bolt"
 )
 
-type Configuration struct {
-	Path  string
-	Delay uint32
-}
-
 func main() {
 
-	// Reading configuration file
-	file, _ := os.Open("config.json")
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	configuration := Configuration{}
-	err := decoder.Decode(&configuration)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	fmt.Println(configuration.Path)
-	fmt.Println(configuration.Delay)
+	// get config file
+	configFile := readConfigFile()
+	defer configFile.Close()
+
+	// parse config file
+	configuration := parseConfigFile(configFile)
+
+	// Check parameters are right
 
 	// Open bolt database connection
-	db, err := bolt.Open("my.db", 0600, nil)
+	db, err := bolt.Open(configuration.DatabaseDirectory+"/.trae.db", 0600, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,7 +39,8 @@ func main() {
 	// Get user input
 	word := os.Args[1]
 	// Prepare URL resource
-	baseURL := "https://dle.rae.es/" + word
+	baseURL := "https://dle.rae.es/" + url.QueryEscape(word)
+	println(baseURL)
 
 	// check if word exists in cache
 	exists := db.View(func(tx *bolt.Tx) error {
@@ -65,7 +58,13 @@ func main() {
 	client.Transport = getTLSConfiguration(client.Transport)
 
 	res, err := client.Get(baseURL)
-	checkErr(err)
+	if err != nil {
+		fmt.Printf("Error al solicitar la siguiente URL: %s\n\n", baseURL)
+		fmt.Printf("Posibles causas del error: \n\n")
+		fmt.Println("1. No está conectado a internet.")
+		fmt.Println("2. El servicio de la RAE web no está disponible.")
+		os.Exit(0)
+	}
 	defer res.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
