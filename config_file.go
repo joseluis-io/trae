@@ -7,7 +7,7 @@ import (
 )
 
 type Configuration struct {
-	DatabaseEnabled   bool
+	DatabaseStore     bool
 	DatabaseDirectory string
 }
 
@@ -24,8 +24,8 @@ func readConfigFile() *os.File {
 func createDefaultConfigFile() *os.File {
 	homeDirectory, _ := os.UserHomeDir()
 	configuration := &Configuration{}
+	configuration.DatabaseStore = false
 	configuration.DatabaseDirectory = homeDirectory
-	configuration.DatabaseEnabled = false
 	content, err := json.Marshal(configuration)
 	err = os.WriteFile(homeDirectory+"/.trae", content, 0600)
 	if err != nil {

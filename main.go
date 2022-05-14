@@ -20,27 +20,33 @@ func main() {
 	// parse config file
 	configuration := parseConfigFile(configFile)
 
-	// Check parameters are right
-
 	// Open bolt database connection
-	db, err := bolt.Open(configuration.DatabaseDirectory+"/.trae.db", 0600, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	db := openDatabase(*configuration)
 	defer db.Close()
 
-	// create bucket if not exists
 	var bucket = []byte("trae")
+	// create bucket if not exists
 	db.Update(func(tx *bolt.Tx) error {
 		tx.CreateBucketIfNotExists(bucket)
 		return nil
 	})
 
+	progArgs := len(os.Args)
+	if progArgs == 1 {
+		fmt.Println("Comando no válido, si necesitas ayuda prueba con:\n\ttrae -h")
+		os.Exit(0)
+	}
 	// Get user input
 	word := os.Args[1]
+
+	if word == "-h" {
+		fmt.Println("Puede llamar a los siguientes comandos:\n\n\ttrae <palabra>\n\ttrae -h")
+		fmt.Println("\nPara más información acceda a https://github.com/jl-hoz/trae")
+		os.Exit(0)
+	}
+
 	// Prepare URL resource
 	baseURL := "https://dle.rae.es/" + url.QueryEscape(word)
-	println(baseURL)
 
 	// check if word exists in cache
 	exists := db.View(func(tx *bolt.Tx) error {
@@ -50,7 +56,7 @@ func main() {
 		if v != nil {
 			os.Exit(0)
 		}
-		return err
+		return nil
 	})
 
 	// Web Scraping
@@ -74,7 +80,7 @@ func main() {
 	results := doc.Find("div.item-list").Text()
 
 	// Persist word in cache
-	if exists == nil {
+	if configuration.DatabaseStore && exists == nil {
 		db.Update(func(tx *bolt.Tx) error {
 			b := tx.Bucket(bucket)
 			err := b.Put([]byte(word), []byte(article))
